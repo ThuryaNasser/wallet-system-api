@@ -1,0 +1,380 @@
+{
+  "info": {
+    "name": "Wallet System API",
+    "description": "A comprehensive collection for testing the Wallet System API endpoints including account creation, balance management, and transaction operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "1. Create Account",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test(\"Response has success true\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "});",
+              "",
+              "pm.test(\"Response contains user data\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data).to.have.property('id');",
+              "    pm.expect(jsonData.data).to.have.property('balance');",
+              "    pm.expect(jsonData.data.balance).to.eql('0.00');",
+              "});",
+              "",
+              "// Save user ID for subsequent requests",
+              "var jsonData = pm.response.json();",
+              "pm.environment.set(\"user_id\", jsonData.data.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john.doe@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/wallet/account",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "wallet", "account"]
+        },
+        "description": "Creates a new user account with wallet functionality. Balance starts at 0.00."
+      }
+    },
+    {
+      "name": "2. Top-Up Balance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Top-up successful\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "    pm.expect(jsonData.message).to.eql('Top-up successful');",
+              "});",
+              "",
+              "pm.test(\"Transaction details are correct\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.type).to.eql('top_up');",
+              "    pm.expect(jsonData.data.amount).to.eql('100.50');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_id\": {{user_id}},\n    \"amount\": 100.50,\n    \"reference\": \"TOP{{$randomInt}}\",\n    \"description\": \"Initial deposit\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/wallet/top-up",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "wallet", "top-up"]
+        },
+        "description": "Adds balance to a user account. Uses dynamic user_id from previous request and random reference."
+      }
+    },
+    {
+      "name": "3. Charge Balance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Charge successful\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "    pm.expect(jsonData.message).to.eql('Charge successful');",
+              "});",
+              "",
+              "pm.test(\"Balance reduced correctly\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.data.type).to.eql('charge');",
+              "    pm.expect(parseFloat(jsonData.data.new_balance)).to.be.lessThan(100.50);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"user_id\": {{user_id}},\n    \"amount\": 25.75,\n    \"reference\": \"CHG{{$randomInt}}\",\n    \"description\": \"Purchase payment\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/wallet/charge",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "wallet", "charge"]
+        },
+        "description": "Deducts balance from a user account. Validates sufficient balance before processing."
+      }
+    },
+    {
+      "name": "4. Get User Balance",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Balance information returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "    pm.expect(jsonData.data).to.have.property('balance');",
+              "    pm.expect(jsonData.data).to.have.property('user_id');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/wallet/balance/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "wallet", "balance", "{{user_id}}"]
+        },
+        "description": "Retrieves the current balance and user information for a specific user."
+      }
+    },
+    {
+      "name": "5. Get Transaction History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Transaction history returned\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.success).to.eql(true);",
+              "    pm.expect(jsonData.data).to.have.property('transactions');",
+              "    pm.expect(jsonData.data).to.have.property('pagination');",
+              "});",
+              "",
+              "pm.test(\"Transactions are ordered by date\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.data.transactions.length > 1) {",
+              "        var first = new Date(jsonData.data.transactions[0].created_at);",
+              "        var second = new Date(jsonData.data.transactions[1].created_at);",
+              "        pm.expect(first.getTime()).to.be.greaterThan(second.getTime());",
+              "    }",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/wallet/transactions/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "wallet", "transactions", "{{user_id}}"]
+        },
+        "description": "Retrieves paginated transaction history for a user, ordered by most recent first."
+      }
+    },
+    {
+      "name": "Edge Case Tests",
+      "item": [
+        {
+          "name": "Test Insufficient Balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Insufficient balance error\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(false);",
+                  "    pm.expect(jsonData.message).to.eql('Insufficient balance');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{user_id}},\n    \"amount\": 999999.99,\n    \"reference\": \"FAIL{{$randomInt}}\",\n    \"description\": \"Testing insufficient balance\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/charge",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "charge"]
+            },
+            "description": "Tests the insufficient balance validation by attempting to charge more than available."
+          }
+        },
+        {
+          "name": "Test Invalid Amount (Zero)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Validation error for amount\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('errors');",
+                  "    pm.expect(jsonData.errors).to.have.property('amount');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{user_id}},\n    \"amount\": 0,\n    \"reference\": \"ZERO{{$randomInt}}\",\n    \"description\": \"Testing zero amount\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/top-up",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "top-up"]
+            },
+            "description": "Tests amount validation by attempting to top-up with zero amount."
+          }
+        },
+        {
+          "name": "Test Duplicate Reference",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 422\", function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test(\"Duplicate reference error\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('errors');",
+                  "    pm.expect(jsonData.errors).to.have.property('reference');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{user_id}},\n    \"amount\": 10.00,\n    \"reference\": \"DUPLICATE_TEST\",\n    \"description\": \"First attempt\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/wallet/top-up",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "wallet", "top-up"]
+            },
+            "description": "Tests duplicate reference prevention. Run this request twice to see the validation error."
+          }
+        }
+      ],
+      "description": "Collection of requests to test edge cases and error handling scenarios."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set base URL if not already set",
+          "if (!pm.environment.get('base_url')) {",
+          "    pm.environment.set('base_url', 'http://127.0.0.1:8000');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ]
+}
